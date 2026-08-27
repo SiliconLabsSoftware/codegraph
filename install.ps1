@@ -13,7 +13,7 @@
 #   CODEGRAPH_INSTALL_DIR  install location (default: %LOCALAPPDATA%\codegraph)
 
 $ErrorActionPreference = 'Stop'
-$repo = 'colbymchenry/codegraph'
+$repo = 'SiliconLabsSoftware/codegraph'
 $installDir = if ($env:CODEGRAPH_INSTALL_DIR) { $env:CODEGRAPH_INSTALL_DIR } else { Join-Path $env:LOCALAPPDATA 'codegraph' }
 
 # 1. Detect architecture -> target matching the release archives.
