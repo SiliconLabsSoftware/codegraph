@@ -17,10 +17,8 @@ Follow [@getcodegraph](https://x.com/getcodegraph) on X for updates.
 
 ### [Documentation & Website →](https://SiliconLabsSoftware.github.io/codegraph/)
 
-[![npm version](https://img.shields.io/npm/v/@SiliconLabsSoftware/codegraph.svg)](https://www.npmjs.com/package/@SiliconLabsSoftware/codegraph)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Self-contained](https://img.shields.io/badge/Node.js-bundled%20%C2%B7%20none%20required-brightgreen.svg)](https://nodejs.org/)
-[![npm provenance](https://img.shields.io/badge/npm-provenance-brightgreen.svg)](#verified-releases)
 [![Attested builds](https://img.shields.io/badge/releases-signed%20%26%20attested-brightgreen.svg)](#verified-releases)
 
 [![Windows](https://img.shields.io/badge/Windows-supported-blue.svg)](#supported-platforms)
@@ -84,19 +82,6 @@ curl -fsSL https://raw.githubusercontent.com/SiliconLabsSoftware/codegraph/main/
 irm https://raw.githubusercontent.com/SiliconLabsSoftware/codegraph/main/install.ps1 | iex
 ```
 
-<details>
-<summary><b>Already have Node? Use npm instead (works on any version)</b></summary>
-
-```bash
-npm i -g @SiliconLabsSoftware/codegraph
-```
-
-<sub>CodeGraph bundles its own runtime — nothing to compile, no native build, works the same everywhere. The installer puts `codegraph` on your PATH but **doesn't change your current shell** — open a new terminal before the next step so the command resolves.</sub>
-
-<sub>**Upgrade any time** with `codegraph upgrade` — it detects how you installed (bundle, npm, or npx) and updates in place. Add `--check` to see if an update is available, or `codegraph upgrade <version>` to pin one.</sub>
-
-</details>
-
 ### 2. Wire up your agent(s)
 
 In a **new terminal**, run the installer to connect CodeGraph to the agents you use:
@@ -128,7 +113,7 @@ Auto-sync is enabled by default. CodeGraph watches the project and updates the g
 
 ### Uninstall
 
-Changed your mind? One command removes CodeGraph from every agent it configured **and** the CLI itself — every install it finds (standalone bundle, npm global package, launcher link), shown to you before anything is deleted:
+Changed your mind? One command removes CodeGraph from every agent it configured **and** the CLI itself — every install it finds (standalone bundle, launcher link), shown to you before anything is deleted:
 
 ```bash
 codegraph uninstall
@@ -421,11 +406,6 @@ That's it — your agent will use CodeGraph tools automatically when a `.codegra
 <details>
 <summary><strong>Manual Setup (Alternative)</strong></summary>
 
-**Install globally:**
-```bash
-npm install -g @SiliconLabsSoftware/codegraph
-```
-
 **Add to `~/.claude.json`:**
 ```json
 {
@@ -574,51 +554,6 @@ Even when the server's own root has no `.codegraph/` index, the tools stay avail
 
 ---
 
-## Library Usage
-
-CodeGraph can be embedded directly. The npm package re-exports its programmatic
-API, so both `import` and `require` resolve the `CodeGraph` class in your own
-process — handy for embedding it in an app (e.g. an Electron main process).
-
-```typescript
-import CodeGraph from '@SiliconLabsSoftware/codegraph';
-// CommonJS works too:
-//   const { CodeGraph } = require('@SiliconLabsSoftware/codegraph');
-
-const cg = await CodeGraph.init('/path/to/project');
-// Or: const cg = await CodeGraph.open('/path/to/project');
-
-await cg.indexAll({
-  onProgress: (p) => console.log(`${p.phase}: ${p.current}/${p.total}`)
-});
-
-const results = cg.searchNodes('UserService');
-const callers = cg.getCallers(results[0].node.id);
-const context = await cg.buildContext('fix login bug', { maxNodes: 20, includeCode: true, format: 'markdown' });
-const impact = cg.getImpactRadius(results[0].node.id, 2);
-
-cg.watch();   // auto-sync on file changes
-cg.unwatch(); // stop watching
-cg.close();
-```
-
-Lower-level building blocks are exported from the same entry point for callers
-that drive the graph directly: `DatabaseConnection`, `QueryBuilder`,
-`getDatabasePath`, `initGrammars` / `loadGrammarsForLanguages`, and `FileLock`.
-
-**Embedding requirements**
-
-- Install from npm (`npm i @SiliconLabsSoftware/codegraph`) so the matching
-  per-platform package — which carries the compiled library and its
-  dependencies — is fetched alongside the shim.
-- The API runs on **your** runtime, so it needs **Node 22.5+** for the built-in
-  `node:sqlite` (Electron qualifies when its bundled Node is 22.5+). The CLI and
-  MCP server are unaffected — they run on the self-contained bundled runtime.
-- TypeScript types ship with the package. As with any Node-targeting library,
-  keep `@types/node` available and `skipLibCheck: true` (the common default).
-
----
-
 ## Configuration
 
 Next to none — CodeGraph is **zero-config by default**, with nothing to write or
@@ -715,15 +650,6 @@ Every artifact is built and published by the public
 [Release workflow](.github/workflows/release.yml) — never from a laptop — and
 carries cryptographic proof of it:
 
-- **npm packages** are published via [trusted publishing](https://docs.npmjs.com/trusted-publishers)
-  (OIDC — no long-lived npm tokens exist that could be stolen) with
-  [provenance attestations](https://docs.npmjs.com/generating-provenance-statements)
-  linking every version to the exact commit and workflow run that built it.
-  Verify what's installed:
-
-  ```bash
-  npm audit signatures
-  ```
 
 - **GitHub Release bundles** (and `SHA256SUMS`) carry signed
   [build attestations](https://docs.github.com/en/actions/security-for-github-actions/using-artifact-attestations)
@@ -743,9 +669,9 @@ compile) for all three desktop OSes, on both Intel/AMD (x64) and ARM (arm64):
 
 | Platform | Architectures | Install |
 |----------|---------------|---------|
-| Windows | x64, arm64 | PowerShell installer or npm |
-| macOS | x64, arm64 | shell installer or npm |
-| Linux | x64, arm64 | shell installer or npm |
+| Windows | x64, arm64 | PowerShell installer |
+| macOS | x64, arm64 | shell installer |
+| Linux | x64, arm64 | shell installer |
 
 See [Get Started](#get-started) for the one-line install commands.
 
@@ -843,7 +769,7 @@ Framework routing is validated the same way, on a canonical app per framework: E
 
 **MCP hits `database is locked`** — current builds shouldn't: CodeGraph bundles its own Node runtime and uses Node's built-in `node:sqlite` in WAL mode, where concurrent reads never block on a writer. If you still see it:
 
-- **You're on an old (pre-0.9) install.** Reinstall to get the bundled runtime — `curl -fsSL https://raw.githubusercontent.com/SiliconLabsSoftware/codegraph/main/install.sh | sh` (macOS/Linux), `irm https://raw.githubusercontent.com/SiliconLabsSoftware/codegraph/main/install.ps1 | iex` (Windows), or `npm i -g @SiliconLabsSoftware/codegraph@latest`.
+- **You're on an old (pre-0.9) install.** Reinstall to get the bundled runtime — `curl -fsSL https://raw.githubusercontent.com/SiliconLabsSoftware/codegraph/main/install.sh | sh` (macOS/Linux), `irm https://raw.githubusercontent.com/SiliconLabsSoftware/codegraph/main/install.ps1 | iex` (Windows).
 - **`codegraph status` shows `Journal:` other than `wal`** — WAL couldn't be enabled on this filesystem (common on network shares and WSL2 `/mnt`), so reads can block on writes. Move the project (with its `.codegraph/` folder) onto a local disk.
 
 **MCP server not connecting** — Your agent starts the server itself, so you don't launch it by hand. Make sure the project is initialized and indexed (`codegraph status`) and that the path in your MCP config is correct. If it still won't connect, re-run `codegraph install` to rewrite the config.
