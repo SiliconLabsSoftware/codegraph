@@ -30,7 +30,7 @@ import * as https from 'https';
 import { spawnSync } from 'child_process';
 import { ansiColorsEnabled } from '../ui/color';
 
-export const REPO = 'colbymchenry/codegraph';
+export const REPO = 'SiliconLabsSoftware/codegraph';
 export const NPM_PACKAGE = '@colbymchenry/codegraph';
 const RAW_BASE = `https://raw.githubusercontent.com/${REPO}/main`;
 export const INSTALL_SH_URL = `${RAW_BASE}/install.sh`;
