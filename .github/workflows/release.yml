@@ -10,16 +10,10 @@ name: Release
 #      native compilation, so cross-packaging is fine),
 #   4. creates the GitHub Release (tag v<version>) with all archives, using the
 #      release notes from CHANGELOG.md,
-#   5. publishes the npm thin-installer (shim + per-platform packages).
 #
 # Before triggering: bump package.json. CHANGELOG.md entries can live under
 # `## [Unreleased]` — step 2 takes care of moving them.
 #
-# npm auth is OIDC trusted publishing (no NPM_TOKEN): every published package
-# (@colbymchenry/codegraph + the per-platform bundles) has this repo +
-# release.yml configured as its trusted publisher on npmjs.com. Adding a new
-# platform package means configuring its trusted publisher there before the
-# first release that includes it.
 on:
   workflow_dispatch: {}
 
