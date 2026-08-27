@@ -97,10 +97,6 @@ jobs:
           # NODE_AUTH_TOKEN env var to exist, and we publish via OIDC
           # trusted publishing instead of a token.
 
-      - name: Upgrade npm for OIDC trusted publishing
-        # Trusted publishing needs npm >= 11.5; Node 22 bundles npm 10.
-        run: npm install -g npm@11 && npm --version
-
       - name: Sync package-lock.json if version drifted
         # When the maintainer bumps the version on package.json only — for
         # example via a GitHub web-UI edit — `npm ci` would refuse to run
@@ -246,58 +242,3 @@ jobs:
             gh release create "$TAG" release/codegraph-* release/SHA256SUMS --title "$TAG" --notes-file notes.md
           fi
 
-      - name: Publish to npm
-        # Auth is OIDC trusted publishing (id-token: write above) — npm mints
-        # a short-lived credential from the workflow's identity; there is no
-        # NPM_TOKEN. Provenance is generated automatically on this path; the
-        # explicit --provenance keeps the intent visible and fails loudly if
-        # OIDC is ever unavailable.
-        run: |
-          V="${{ steps.ver.outputs.version }}"
-          bash scripts/pack-npm.sh "$V"
-          # Platform packages first, then the main shim (which depends on them).
-          # Skip any already on the registry so a re-run only fills in gaps.
-          for dir in release/npm/codegraph-* release/npm/main; do
-            name=$(node -p "require('./$dir/package.json').name")
-            if npm view "$name@$V" version >/dev/null 2>&1; then
-              echo "skip $name@$V (already published)"
-            else
-              echo "publishing $name@$V"
-              # --provenance: publish with an npm provenance attestation
-              # (needs the id-token: write permission above and the
-              # repository field pack-npm.sh writes into each package.json).
-              ( cd "$dir" && npm publish --access public --provenance )
-            fi
-          done
-
-      - name: Verify every package is actually on the registry
-        run: |
-          V="${{ steps.ver.outputs.version }}"
-          # npm publish can print success without persisting; confirm against the
-          # registry (with retries for propagation) so green means really shipped.
-          for dir in release/npm/codegraph-* release/npm/main; do
-            name=$(node -p "require('./$dir/package.json').name")
-            ok=
-            for i in 1 2 3 4 5 6; do
-              if npm view "$name@$V" version >/dev/null 2>&1; then ok=1; break; fi
-              echo "waiting for $name@$V to appear ($i)…"; sleep 10
-            done
-            [ -n "$ok" ] || { echo "::error::$name@$V never appeared on the registry"; exit 1; }
-            echo "verified $name@$V"
-          done
-
-      - name: Sync packages to npmmirror
-        # npmmirror/cnpm mirror lazily and frequently never pull the per-platform
-        # optionalDependencies on their own, so `npm i` there fails with
-        # "no prebuilt bundle" (issue #303). Nudge a sync now so mirror users get
-        # the bundle without waiting. Best-effort — the launcher also self-heals
-        # from GitHub Releases — so a mirror hiccup never fails the release.
-        continue-on-error: true
-        run: |
-          for dir in release/npm/codegraph-* release/npm/main; do
-            name=$(node -p "require('./$dir/package.json').name")
-            enc=$(node -p "encodeURIComponent(require('./$dir/package.json').name)")
-            echo "sync $name"
-            curl -s -X PUT "https://registry.npmmirror.com/-/package/$enc/syncs" || true
-            echo
-          done
